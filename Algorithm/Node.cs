@@ -17,7 +17,7 @@ public class Node {
     }
 
     public override string ToString() {
-        if (IsLeaf()) return compareValue.ToString() + value.ToString();
+        if (IsLeaf()) return compareValue.ToString() + ',' + value.ToString() + ';';
         string childValues = string.Empty;
         if (lNode != null) childValues += lNode.ToString();
         if (rNode != null) childValues += rNode.ToString();

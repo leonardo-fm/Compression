@@ -28,39 +28,34 @@ public class Huffman {
 
     private List<Node> ExtractListFromFile(string filePath) {
         List<Node> result = new List<Node>();
-        Dictionary<char, int> cd = new Dictionary<char, int>();
-
-        if (!File.Exists(filePath)) throw new FileNotFoundException($"The file at the path {filePath} was not founded");
-        using (FileStream fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None))
-        {
-            // skip dirty byte
-            fs.ReadByte();
+        int nOfChars = 0;
+        int[] compareValues;
+        char[] values;
             
-            int i = 0;
-            byte[] intValue = new byte[sizeof(int)];
-            int byteRead;
-            bool firstEOL = false;
-            while ((byteRead = fs.ReadByte()) != -1)
+        if (!File.Exists(filePath)) throw new FileNotFoundException($"The file at the path {filePath} was not founded");
+        var treeString = new StringBuilder();
+        using (FileStream fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
+            // skip dirty byte
+            fs.Position = 1;
+            nOfChars = fs.ReadByte();
+            
+            compareValues = new int[nOfChars];
+            values = new char[nOfChars];
+            using (BinaryReader br = new BinaryReader(fs))
             {
-                if (firstEOL && (char)byteRead == '\n') break;
+                fs.Seek(2, SeekOrigin.Begin);
+                for (int i = 0; i < nOfChars; i++)
+                    compareValues[i] = br.ReadInt32();
                 
-                if (i < sizeof(int)) {
-                    if ((char)byteRead == '\n') firstEOL = true;
-                    intValue[sizeof(int) - 1 - i] = (byte)byteRead;
-                    i++;
-                } else {
-                    cd.Add((char)byteRead, BitConverter.ToInt32(intValue));
-                    i = 0;
-                }
+                values = br.ReadChars(nOfChars);
             }
         }
+
+        for (int i = 0; i < nOfChars; i++)
+            result.Add(new Node(compareValues[i], values[i]));
         
-        foreach (KeyValuePair<char, int> kvp in cd)
-        {
-            result.Add(new Node(kvp.Value, kvp.Key));
-        }
         
-        return result.OrderBy(x => x.compareValue).ToList();
+        return result.OrderBy(x => x.value).OrderBy(x => x.compareValue).ToList();
     }
     
     private void GenerateUncompressedFile(string filePath, HTree tree) {
@@ -68,7 +63,9 @@ public class Huffman {
         using (FileStream fr = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
             // Read the dirty byte
             bool hasDirtyByte = fr.ReadByte() == 1;
-
+            int fileContent = 5 + tree.GetNumberOfLeaves() * 5; //1 dirt byte + 4 n of items (int) + n of items * 4 (int) + n of item
+            fr.Seek(fileContent - 1, SeekOrigin.Begin);
+            
             // Create the decompressed file
             int bufferIndex = 0;
             int bitsIndex = 0;
@@ -95,6 +92,7 @@ public class Huffman {
                         }
                     }
                 }
+                
                 if (bufferIndex != 0) {
                     byte[] lastWBuffer = new byte[bufferIndex];
                     Array.Copy(wBuffer, lastWBuffer, bufferIndex);
@@ -140,10 +138,12 @@ public class Huffman {
             result.Add(new Node(kvp.Value, kvp.Key));
         }
         
-        return result.OrderBy(x => x.compareValue).ToList();
+        return result.OrderBy(x => x.value).OrderBy(x => x.compareValue).ToList();
     }
 
     private HTree GenerateTree(List<Node> objs) {
+        if (objs.Count > 255) throw new ArgumentOutOfRangeException("Max value for number of char is 255 chars");
+        byte nOfChars = (byte)objs.Count;
         while (objs.Count > 1) {
             Node lNode = objs[0];
             objs.RemoveAt(0);
@@ -158,7 +158,7 @@ public class Huffman {
             }
         }
         
-        return new HTree(objs[0]);
+        return new HTree(objs[0], nOfChars);
     }
 
     private Node FuseNodes(Node lNode, Node rNode) {
@@ -176,7 +176,8 @@ public class Huffman {
 
     /* The file is compose as:
      * 1° byte is the dirty byte
-     * 2° to X bytes are for the tree values as nOfOccursions,charValue;...\n\n
+     * 2° byte is the number of char in the text
+     * 3° to X bytes are for the tree values as nOfOccurrences*N...charValue*N
      * X to N bytes the file compressed
      * N to EOF probably is not a precise number of bytes after the compression so if it is the case i put 0 or 1
      * til we have a completed byte (i take the opposite of the last value) otherwise i do nothing and set the dirty byte to 0
@@ -189,8 +190,13 @@ public class Huffman {
             byte[] dirtyByte = new UTF8Encoding(true).GetBytes("1");
             destinationStream.Write(dirtyByte, 0, dirtyByte.Length);
             
+            // Set the number of occurrences
+            destinationStream.Write(new byte[]{ tree.GetNumberOfLeaves() }, 0, sizeof(byte));
+            
             // Set the tree values
-            byte[] treeInfo = new UTF8Encoding(true).GetBytes(tree.ToString() + "\n\n");
+            BitArray treeVal = tree.GetTreeValue();
+            byte[] treeInfo = new byte[treeVal.Length / 8];
+            treeVal.CopyTo(treeInfo, 0);
             destinationStream.Write(treeInfo, 0, treeInfo.Length);
             
             // Set the compressed file
@@ -198,8 +204,7 @@ public class Huffman {
             int bitIndex = 0;
             using (FileStream sourceStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
                 int byteRead;
-                while ((byteRead = sourceStream.ReadByte()) != -1)
-                {
+                while ((byteRead = sourceStream.ReadByte()) != -1) {
                     char charValue = (char)byteRead;
                     BitArray newValue = tree.GetBitsFromChar(charValue);
                     for (int i = 0; i < newValue.Length; i++) {
@@ -246,7 +251,7 @@ public class Huffman {
     private int GetIntValueFromByteArray(BitArray r) {
         int result = 0;
         for (int i = 0; i < r.Length; i++) {
-            if (r[i]) result += Convert.ToInt32(Math.Pow(2, r.Length - 1 - i));
+            if (r[i]) result += Convert.ToInt32(Math.Pow(2, i));
         }
         return result;
     }
