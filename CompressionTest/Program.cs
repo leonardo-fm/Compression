@@ -1,7 +1,7 @@
 ﻿using Algorithm;
 
 class Program {
-    private static string file = "Test";
+    private static string file = "Test4";
     
     static void Main(string[] args) {
         HuffmanCompression cmp = new HuffmanCompression();

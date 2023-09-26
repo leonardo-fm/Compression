@@ -25,14 +25,14 @@ public class HTree {
         Node currentNode = root;
         if (lastVisitedNode != null) currentNode = lastVisitedNode;
         while (!currentNode.IsLeaf()) {
-            if (bitArray[currentIndex] == false) currentNode = currentNode.lNode;
-            if (bitArray[currentIndex] == true) currentNode = currentNode.rNode;
-            currentIndex++;
-
-            if (currentIndex > bitArray.Length) {
+            if (currentIndex >= bitArray.Length) {
                 lastVisitedNode = currentNode;
                 return null;
             }
+            
+            if (bitArray[currentIndex] == false) currentNode = currentNode.lNode;
+            if (bitArray[currentIndex] == true) currentNode = currentNode.rNode;
+            currentIndex++;
         }
 
         if (lastVisitedNode != null) lastVisitedNode = null;
