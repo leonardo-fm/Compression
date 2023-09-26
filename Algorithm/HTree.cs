@@ -1,22 +1,23 @@
 ﻿using System.Collections;
-using System.Text;
 
 namespace Algorithm; 
 
 public class HTree {
     private readonly Node root;
-    private Dictionary<char, bool[]> charMap;
+    private Dictionary<byte, bool[]> charMap;
+    private Dictionary<byte, int> charRepetitionMap;
     private byte leafInTheTree;
 
     public HTree(Node root, byte leafInTheTree) {
         this.root = root;
-        charMap = new Dictionary<char, bool[]>();
-        GenerateCharDictionary(root, new List<bool>());
+        charMap = new Dictionary<byte, bool[]>();
+        charRepetitionMap = new Dictionary<byte, int>();
+        GenerateCharDictionaries(root, new List<bool>());
         this.leafInTheTree = leafInTheTree;
     }
 
     public BitArray GetBitsFromChar(char c) {
-        return new BitArray(charMap[c]);
+        return new BitArray(charMap[Convert.ToByte(c)]);
     }
 
     // If the lastVisitedNode is null then start from the root
@@ -43,17 +44,8 @@ public class HTree {
     }
 
     public BitArray GetTreeValue() {
-        List<(int, char)> treeKeyValues = new List<(int, char)>();
-        GoThrowAllTree(root, ref treeKeyValues);
-        int[] compValues = new int[GetNumberOfLeaves()];
-        char[] values = new char[GetNumberOfLeaves()];
-        for (int i = 0; i < treeKeyValues.Count; i++) {
-            compValues[i] = treeKeyValues[i].Item1;
-            values[i] = treeKeyValues[i].Item2;
-        }
-        
-        BitArray compValuesResponse = new BitArray(compValues);
-        BitArray valuesResponse = new BitArray(Encoding.UTF8.GetBytes(new string(values)));
+        BitArray compValuesResponse = new BitArray(charRepetitionMap.Values.ToArray());
+        BitArray valuesResponse = new BitArray(charRepetitionMap.Keys.ToArray());
 
         BitArray response = new BitArray(compValuesResponse.Length + valuesResponse.Length);
         for (int i = 0; i < compValuesResponse.Length; i++)
@@ -68,28 +60,21 @@ public class HTree {
         return root.ToString();
     }
 
-    private void GenerateCharDictionary(Node node, List<bool> currentPath) {
-        if (node.IsLeaf()) charMap.Add(node.value.Value, currentPath.ToArray());
-        else {
+    private void GenerateCharDictionaries(Node node, List<bool> currentPath) {
+        if (node.IsLeaf()) {
+            charMap.Add(Convert.ToByte(node.value.Value), currentPath.ToArray());
+            charRepetitionMap.Add(Convert.ToByte(node.value.Value), node.compareValue);
+        } else {
             if (node.lNode != null) {
                 currentPath.Add(false);
-                GenerateCharDictionary(node.lNode, currentPath);
+                GenerateCharDictionaries(node.lNode, currentPath);
                 currentPath.Remove(false);
             }
             if (node.rNode != null) {
                 currentPath.Add(true);
-                GenerateCharDictionary(node.rNode, currentPath);
+                GenerateCharDictionaries(node.rNode, currentPath);
                 currentPath.Remove(true);
             }
         }
-    }
-
-    private void GoThrowAllTree(Node currentNode, ref List<(int, char)> treeKeyValues) {
-        if (currentNode.IsLeaf()) {
-            treeKeyValues.Add(new (currentNode.compareValue, currentNode.value.Value));
-            return;
-        }
-        if (currentNode.lNode != null) GoThrowAllTree(currentNode.lNode, ref treeKeyValues);
-        if (currentNode.rNode != null) GoThrowAllTree(currentNode.rNode, ref treeKeyValues);
     }
 }

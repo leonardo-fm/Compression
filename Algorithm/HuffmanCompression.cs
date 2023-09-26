@@ -84,10 +84,10 @@ public class HuffmanCompression {
                 }
             }
             
-            int nOfDirtyBytes = BIT_BUFFER_LENGTH - bitIndex - 1; 
+            int nOfDirtyBytes = BIT_BUFFER_LENGTH - bitIndex; 
             if (bitIndex != 0) {
                 bool substituteValue = !bitBuffer[bitIndex];
-                for (int i = bitIndex + 1; i < BIT_BUFFER_LENGTH; i++)
+                for (int i = bitIndex; i < BIT_BUFFER_LENGTH; i++)
                     bitBuffer[i] = substituteValue;
                 readBufferFileToCompress[readBufferIndex++] = BitHelper.ConvertBitArrayToByte(bitBuffer);
             }

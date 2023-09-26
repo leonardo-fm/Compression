@@ -23,7 +23,7 @@ public class HuffmanDecompression {
         List<Node> result = new List<Node>();
         int nOfChars = 0;
         int[] compareValues;
-        char[] values;
+        byte[] values;
         
         using (FileStream fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
             // skip dirty byte
@@ -31,17 +31,19 @@ public class HuffmanDecompression {
             nOfChars = fs.ReadByte();
             
             compareValues = new int[nOfChars];
+            values = new byte[nOfChars];
             using (BinaryReader br = new BinaryReader(fs))
             {
                 fs.Seek(2, SeekOrigin.Begin);
                 for (int i = 0; i < nOfChars; i++)
                     compareValues[i] = br.ReadInt32();
-                values = br.ReadChars(nOfChars);
+                for (int i = 0; i < nOfChars; i++)
+                    values[i] = br.ReadByte();
             }
         }
 
         for (int i = 0; i < nOfChars; i++)
-            result.Add(new Node(compareValues[i], values[i]));
+            result.Add(new Node(compareValues[i], Convert.ToChar(values[i])));
         
         return result.OrderBy(x => x.value).OrderBy(x => x.compareValue).ToList();
     }
@@ -109,7 +111,6 @@ public class HuffmanDecompression {
                 } else {
                     bitArray = new BitArray(lastWBuffer);
                 }
-                
                 bitsIndex = 0;
                 while (bitsIndex < bitArray.Length) {
                     char? nextChar = tree.GetCharFromBits(bitArray, ref bitsIndex, ref lastVisitedNode);
@@ -122,7 +123,7 @@ public class HuffmanDecompression {
                 }
                 
                 // Buffer dump
-                fs.Write(wBufferOnFile, 0, fileIndex);
+                fs.Write(wBufferOnFile, 0, fileIndex + 1);
             }
         }
     }
