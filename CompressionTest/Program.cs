@@ -3,12 +3,12 @@
 class Program
 {
     static void Main(string[] args) {
-        Huffman cmp = new Huffman();
+        HuffmanCompression cmp = new HuffmanCompression();
         cmp.Compress(@"C:\Users\Lo\Desktop\Cmp\Test3.txt");
         Console.WriteLine("Finished compressing");
 
-        Huffman ucmp = new Huffman();
-        ucmp.Uncompress(@"C:\Users\Lo\Desktop\Cmp\Test3.mlh");
+        HuffmanDecompression dcmp = new HuffmanDecompression();
+        dcmp.Decompression(@"C:\Users\Lo\Desktop\Cmp\Test3.mlh");
         Console.WriteLine("Finished uncompressing");
     }
 }
