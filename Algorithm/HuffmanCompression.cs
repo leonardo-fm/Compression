@@ -12,7 +12,6 @@ public class HuffmanCompression {
     public void Compress(string filePath) {
         List<Node> charList = GenerateList(filePath);
         HTree tree = Utilities.GenerateTree(charList);
-        Console.WriteLine(tree.ToString());
         GenerateCompressedFile(filePath, tree);
     }
 

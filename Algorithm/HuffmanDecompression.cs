@@ -14,7 +14,6 @@ public class HuffmanDecompression {
     public void Decompression(string filePath) {
         List<Node> charList = ExtractListFromFile(filePath);
         HTree tree = Utilities.GenerateTree(charList);
-        Console.WriteLine(tree.ToString());
         GenerateUncompressedFile(filePath, tree);
     }
     
