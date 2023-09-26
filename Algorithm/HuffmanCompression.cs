@@ -9,7 +9,7 @@ public class HuffmanCompression {
     private byte[] readBufferFileToCompress = new byte[BUFFER_LENGTH_READ];
     private BitArray bitBuffer = new BitArray(BIT_BUFFER_LENGTH);
     
-    public void Compress(string filePath) { 
+    public void Compress(string filePath) {
         List<Node> charList = GenerateList(filePath);
         HTree tree = Utilities.GenerateTree(charList);
         GenerateCompressedFile(filePath, tree);
@@ -83,7 +83,7 @@ public class HuffmanCompression {
                 }
             }
             
-            int nOfDirtyBytes = BIT_BUFFER_LENGTH - bitIndex; 
+            int nOfDirtyBytes = (BIT_BUFFER_LENGTH - bitIndex) % BIT_BUFFER_LENGTH; 
             if (bitIndex != 0) {
                 bool substituteValue = !bitBuffer[bitIndex];
                 for (int i = bitIndex; i < BIT_BUFFER_LENGTH; i++)

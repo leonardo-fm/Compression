@@ -29,7 +29,7 @@ public class HTree {
             if (bitArray[currentIndex] == true) currentNode = currentNode.rNode;
             currentIndex++;
 
-            if (currentIndex >= bitArray.Length) {
+            if (currentIndex > bitArray.Length) {
                 lastVisitedNode = currentNode;
                 return null;
             }
@@ -60,6 +60,16 @@ public class HTree {
         return root.ToString();
     }
 
+    public void PrintDictionary() {
+        foreach (var keyValuePair in charMap) {
+            Console.Write($"{Convert.ToChar(keyValuePair.Key)}: ");
+            foreach (bool b in keyValuePair.Value) {
+                Console.Write(b ? 1 : 0);
+            }
+            Console.WriteLine();
+        }
+    }
+
     private void GenerateCharDictionaries(Node node, List<bool> currentPath) {
         if (node.IsLeaf()) {
             charMap.Add(Convert.ToByte(node.value.Value), currentPath.ToArray());
@@ -68,12 +78,12 @@ public class HTree {
             if (node.lNode != null) {
                 currentPath.Add(false);
                 GenerateCharDictionaries(node.lNode, currentPath);
-                currentPath.Remove(false);
+                currentPath.RemoveAt(currentPath.Count - 1);
             }
             if (node.rNode != null) {
                 currentPath.Add(true);
                 GenerateCharDictionaries(node.rNode, currentPath);
-                currentPath.Remove(true);
+                currentPath.RemoveAt(currentPath.Count - 1);
             }
         }
     }

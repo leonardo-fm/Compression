@@ -110,6 +110,7 @@ public class HuffmanDecompression {
                 } else {
                     bitArray = new BitArray(lastWBuffer);
                 }
+                
                 bitsIndex = 0;
                 while (bitsIndex < bitArray.Length) {
                     char? nextChar = tree.GetCharFromBits(bitArray, ref bitsIndex, ref lastVisitedNode);

@@ -16,4 +16,12 @@ public static class BitHelper {
         if (bitArray.Length != 8) throw new InvalidEnumArgumentException("The bitArray is not 8 bit");
         return ConvertFromBitArrayToByteArray(bitArray)[0];
     }
+
+    public static void PrintContentAsBits(this BitArray bitArray) {
+        for (var i = 0; i < bitArray.Count; i++) {
+            if (i != 0 && i % 8 == 0) Console.Write(" ");
+            Console.Write(bitArray[i] ? 1 : 0);
+        }
+        Console.WriteLine();
+    }
 }
