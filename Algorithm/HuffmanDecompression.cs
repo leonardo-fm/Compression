@@ -3,12 +3,10 @@
 namespace Algorithm; 
 
 public class HuffmanDecompression {
-    private const int BUFFER_LENGTH_READ = 1024;
-    private const int BUFFER_LENGTH_WRITE = 256;
+    private const int BUFFER_LENGTH_READ = 256;
     private const int BUFFER_LENGTH_WRITE_ON_FILE = 1024;
 
-    private byte[] readBufferFileToCompress = new byte[BUFFER_LENGTH_READ];
-    private byte[] wBuffer = new byte[BUFFER_LENGTH_WRITE];
+    private byte[] rBuffer = new byte[BUFFER_LENGTH_READ];
     private byte[] wBufferOnFile = new byte[BUFFER_LENGTH_WRITE_ON_FILE];
 
     public void Decompression(string filePath) {
@@ -49,37 +47,37 @@ public class HuffmanDecompression {
     
     private void GenerateUncompressedFile(string filePath, HTree tree) {
         string newFilePath = filePath.Substring(0, filePath.LastIndexOf('.')) + "_dec.txt";
-        using (FileStream fr = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
+        using (FileStream CompressedFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
             // Read the dirty byte
-            int nOfDirtyBits = fr.ReadByte();
-            int nOfChars = fr.ReadByte();
+            int nOfDirtyBits = CompressedFileStream.ReadByte();
+            int nOfChars = CompressedFileStream.ReadByte();
             
             // (byte) dirtyByte + (byte) nOfChars + (int) nOfItems + (char) valueOfChars
-            int fileContentStartIndex = 2 + tree.GetNumberOfLeaves() * 5; 
-            fr.Seek(fileContentStartIndex, SeekOrigin.Begin);
+            int fileContentStartIndex = 2 + nOfChars * 5; 
+            CompressedFileStream.Seek(fileContentStartIndex, SeekOrigin.Begin);
             
             // Create the decompressed file
             int bufferIndex = 0;
             int bitsIndex = 0;
             int fileIndex = 0;
             Node lastVisitedNode = null;
-            using (FileStream fs = File.Create(newFilePath)) {
+            using (FileStream DecompressedFileStream = File.Create(newFilePath)) {
                 int byteRead;
                 BitArray bitArray;
-                while ((byteRead = fr.ReadByte()) != -1) {
-                    if (bufferIndex < BUFFER_LENGTH_WRITE) {
-                        // Sequential reading from the fie
-                        wBuffer[bufferIndex++] = (byte)byteRead;
-                    } else {
-                        if (fs.Position == fs.Length && nOfDirtyBits > 0) {
+                while ((byteRead = CompressedFileStream.ReadByte()) != -1) {
+                    rBuffer[bufferIndex++] = (byte)byteRead;
+                    
+                    if (bufferIndex >= BUFFER_LENGTH_READ) {
+                        if (CompressedFileStream.Position == CompressedFileStream.Length && nOfDirtyBits > 0) {
                             // Finished reading through the file, remove the dirty bits
-                            BitArray tmpBitArray = new BitArray(wBuffer);
-                            bitArray = new BitArray(wBuffer.Length * 8 - nOfDirtyBits);
+                            BitArray tmpBitArray = new BitArray(rBuffer);
+                            bitArray = new BitArray(rBuffer.Length * 8 - nOfDirtyBits);
                             for (int i = 0; i < bitArray.Length; i++)
                                 bitArray[i] = tmpBitArray[i];
                         } else {
-                            bitArray = new BitArray(wBuffer);
+                            bitArray = new BitArray(rBuffer);
                         }
+                        bufferIndex = 0;
                         
                         while (bitsIndex < bitArray.Length) {
                             // The result could be null iff the tree is in the middle of a search
@@ -88,42 +86,43 @@ public class HuffmanDecompression {
                                 wBufferOnFile[fileIndex++] = (byte)nextChar.Value;
                             if (fileIndex >= wBufferOnFile.Length) {
                                 // Write into the file
-                                fs.Write(wBufferOnFile, 0, readBufferFileToCompress.Length);
+                                DecompressedFileStream.Write(wBufferOnFile, 0, wBufferOnFile.Length);
                                 fileIndex = 0;
                             }
                         }
+                        bitsIndex = 0;
                     }
                 }
 
                 // If nothing is in the buffer
-                if (bufferIndex == 0) return;
-                
-                byte[] lastWBuffer = new byte[bufferIndex];
-                Array.Copy(wBuffer, lastWBuffer, bufferIndex);
+                if (bufferIndex != 0) {
+                    byte[] lastWBuffer = new byte[bufferIndex];
+                    Array.Copy(rBuffer, lastWBuffer, bufferIndex);
 
-                if (fs.Position == fs.Length && nOfDirtyBits > 0) {
-                    // Finished reading through the file, remove the dirty bits
-                    BitArray tmpBitArray = new BitArray(lastWBuffer);
-                    bitArray = new BitArray(lastWBuffer.Length * 8 - nOfDirtyBits);
-                    for (int i = 0; i < bitArray.Length; i++)
-                        bitArray[i] = tmpBitArray[i];
-                } else {
-                    bitArray = new BitArray(lastWBuffer);
-                }
+                    if (CompressedFileStream.Position == CompressedFileStream.Length && nOfDirtyBits > 0) {
+                        // Finished reading through the file, remove the dirty bits
+                        BitArray tmpBitArray = new BitArray(lastWBuffer);
+                        bitArray = new BitArray(lastWBuffer.Length * 8 - nOfDirtyBits);
+                        for (int i = 0; i < bitArray.Length; i++)
+                            bitArray[i] = tmpBitArray[i];
+                    } else {
+                        bitArray = new BitArray(lastWBuffer);
+                    }
                 
-                bitsIndex = 0;
-                while (bitsIndex < bitArray.Length) {
-                    char? nextChar = tree.GetCharFromBits(bitArray, ref bitsIndex, ref lastVisitedNode);
-                    if (nextChar != null)
-                        wBufferOnFile[fileIndex++] = (byte)nextChar.Value;
-                    if (fileIndex >= wBufferOnFile.Length) {
-                        fs.Write(wBufferOnFile, 0, readBufferFileToCompress.Length);
-                        fileIndex = 0;
+                    bitsIndex = 0;
+                    while (bitsIndex < bitArray.Length) {
+                        char? nextChar = tree.GetCharFromBits(bitArray, ref bitsIndex, ref lastVisitedNode);
+                        if (nextChar != null)
+                            wBufferOnFile[fileIndex++] = (byte)nextChar.Value;
+                        if (fileIndex >= wBufferOnFile.Length) {
+                            DecompressedFileStream.Write(wBufferOnFile, 0, wBufferOnFile.Length);
+                            fileIndex = 0;
+                        }
                     }
                 }
                 
                 // Buffer dump
-                fs.Write(wBufferOnFile, 0, fileIndex + 1);
+                DecompressedFileStream.Write(wBufferOnFile, 0, fileIndex);
             }
         }
     }
