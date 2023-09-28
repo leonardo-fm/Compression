@@ -3,7 +3,7 @@
 public static class Utilities {
     
     public static HTree GenerateTree(List<Node> objs) {
-        if (objs.Count > 255) throw new ArgumentOutOfRangeException("Max value for number of char is 255 chars");
+        if (objs.Count > 256) throw new ArgumentOutOfRangeException("Max value for number of char is 255 chars");
         byte nOfChars = (byte)objs.Count;
         while (objs.Count > 1) {
             Node lNode = objs[0];

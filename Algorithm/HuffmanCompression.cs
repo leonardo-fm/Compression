@@ -3,7 +3,7 @@
 namespace Algorithm; 
 
 public class HuffmanCompression {
-    private const int BUFFER_LENGTH_READ = 1024;
+    private const int BUFFER_LENGTH_READ = 8192;
     private const int BIT_BUFFER_LENGTH = 8; 
     
     private byte[] readBufferFileToCompress = new byte[BUFFER_LENGTH_READ];
@@ -78,6 +78,7 @@ public class HuffmanCompression {
                                 readBufferIndex = 0;
                             }
                             bitIndex = 0;
+                            Console.Write($"{Math.Round(sourceStream.Position / (decimal) sourceStream.Length * 100, 2)}%\r");
                         }
                     }
                 }

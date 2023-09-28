@@ -3,8 +3,8 @@
 namespace Algorithm; 
 
 public class HuffmanDecompression {
-    private const int BUFFER_LENGTH_READ = 256;
-    private const int BUFFER_LENGTH_WRITE_ON_FILE = 1024;
+    private const int BUFFER_LENGTH_READ = 1024;
+    private const int BUFFER_LENGTH_WRITE_ON_FILE = 8192;
 
     private byte[] rBuffer = new byte[BUFFER_LENGTH_READ];
     private byte[] wBufferOnFile = new byte[BUFFER_LENGTH_WRITE_ON_FILE];
@@ -47,28 +47,28 @@ public class HuffmanDecompression {
     
     private void GenerateUncompressedFile(string filePath, HTree tree) {
         string newFilePath = filePath.Substring(0, filePath.LastIndexOf('.')) + "_dec.txt";
-        using (FileStream CompressedFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
+        using (FileStream compressedFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
             // Read the dirty byte
-            int nOfDirtyBits = CompressedFileStream.ReadByte();
-            int nOfChars = CompressedFileStream.ReadByte();
+            int nOfDirtyBits = compressedFileStream.ReadByte();
+            int nOfChars = compressedFileStream.ReadByte();
             
             // (byte) dirtyByte + (byte) nOfChars + (int) nOfItems + (char) valueOfChars
             int fileContentStartIndex = 2 + nOfChars * 5; 
-            CompressedFileStream.Seek(fileContentStartIndex, SeekOrigin.Begin);
+            compressedFileStream.Seek(fileContentStartIndex, SeekOrigin.Begin);
             
             // Create the decompressed file
             int bufferIndex = 0;
             int bitsIndex = 0;
             int fileIndex = 0;
             Node lastVisitedNode = null;
-            using (FileStream DecompressedFileStream = File.Create(newFilePath)) {
+            using (FileStream decompressedFileStream = File.Create(newFilePath)) {
                 int byteRead;
                 BitArray bitArray;
-                while ((byteRead = CompressedFileStream.ReadByte()) != -1) {
+                while ((byteRead = compressedFileStream.ReadByte()) != -1) {
                     rBuffer[bufferIndex++] = (byte)byteRead;
                     
                     if (bufferIndex >= BUFFER_LENGTH_READ) {
-                        if (CompressedFileStream.Position == CompressedFileStream.Length && nOfDirtyBits > 0) {
+                        if (compressedFileStream.Position == compressedFileStream.Length && nOfDirtyBits > 0) {
                             // Finished reading through the file, remove the dirty bits
                             BitArray tmpBitArray = new BitArray(rBuffer);
                             bitArray = new BitArray(rBuffer.Length * 8 - nOfDirtyBits);
@@ -86,11 +86,12 @@ public class HuffmanDecompression {
                                 wBufferOnFile[fileIndex++] = (byte)nextChar.Value;
                             if (fileIndex >= wBufferOnFile.Length) {
                                 // Write into the file
-                                DecompressedFileStream.Write(wBufferOnFile, 0, wBufferOnFile.Length);
+                                decompressedFileStream.Write(wBufferOnFile, 0, wBufferOnFile.Length);
                                 fileIndex = 0;
                             }
                         }
                         bitsIndex = 0;
+                        Console.Write($"{Math.Round(compressedFileStream.Position / (decimal) compressedFileStream.Length * 100, 2)}%\r");
                     }
                 }
 
@@ -99,7 +100,7 @@ public class HuffmanDecompression {
                     byte[] lastWBuffer = new byte[bufferIndex];
                     Array.Copy(rBuffer, lastWBuffer, bufferIndex);
 
-                    if (CompressedFileStream.Position == CompressedFileStream.Length && nOfDirtyBits > 0) {
+                    if (compressedFileStream.Position == compressedFileStream.Length && nOfDirtyBits > 0) {
                         // Finished reading through the file, remove the dirty bits
                         BitArray tmpBitArray = new BitArray(lastWBuffer);
                         bitArray = new BitArray(lastWBuffer.Length * 8 - nOfDirtyBits);
@@ -115,14 +116,14 @@ public class HuffmanDecompression {
                         if (nextChar != null)
                             wBufferOnFile[fileIndex++] = (byte)nextChar.Value;
                         if (fileIndex >= wBufferOnFile.Length) {
-                            DecompressedFileStream.Write(wBufferOnFile, 0, wBufferOnFile.Length);
+                            decompressedFileStream.Write(wBufferOnFile, 0, wBufferOnFile.Length);
                             fileIndex = 0;
                         }
                     }
                 }
                 
                 // Buffer dump
-                DecompressedFileStream.Write(wBufferOnFile, 0, fileIndex);
+                decompressedFileStream.Write(wBufferOnFile, 0, fileIndex);
             }
         }
     }
