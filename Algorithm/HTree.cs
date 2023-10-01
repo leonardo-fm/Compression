@@ -69,6 +69,12 @@ public class HTree {
             Console.WriteLine();
         }
     }
+    
+    public void PrintDictionaryCompValues() {
+        foreach (var keyValuePair in charRepetitionMap.OrderByDescending(x => x.Value)) {
+            Console.WriteLine($"{Convert.ToChar(keyValuePair.Key)}: {keyValuePair.Value}");
+        }
+    }
 
     private void GenerateCharDictionaries(Node node, List<bool> currentPath) {
         if (node.IsLeaf()) {

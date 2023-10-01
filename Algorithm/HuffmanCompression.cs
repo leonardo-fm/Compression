@@ -9,10 +9,10 @@ public class HuffmanCompression {
     private byte[] readBufferFileToCompress = new byte[BUFFER_LENGTH_READ];
     private BitArray bitBuffer = new BitArray(BIT_BUFFER_LENGTH);
     
-    public void Compress(string filePath) {
+    public void Compress(string filePath, string cmpFileName) {
         List<Node> charList = GenerateList(filePath);
         HTree tree = Utilities.GenerateTree(charList);
-        GenerateCompressedFile(filePath, tree);
+        GenerateCompressedFile(filePath, tree, cmpFileName);
     }
 
     private static List<Node> GenerateList(string filePath) {
@@ -36,7 +36,7 @@ public class HuffmanCompression {
         
         return result.OrderBy(x => x.value).OrderBy(x => x.compareValue).ToList();
     }
-    
+
     /// <summary>
     /// The file is compose as:
     /// 1° byte is the number of dirty bits,
@@ -48,8 +48,9 @@ public class HuffmanCompression {
     /// </summary>
     /// <param name="filePath"></param>
     /// <param name="tree"></param>
-    private void GenerateCompressedFile(string filePath, HTree tree) {
-        string newFilePath = filePath.Substring(0, filePath.LastIndexOf('.')) + ".mlh";
+    /// <param name="cmpFileName"></param>
+    private void GenerateCompressedFile(string filePath, HTree tree, string cmpFileName) {
+        string newFilePath = filePath.Substring(0, filePath.LastIndexOf('\\')) + "\\" + cmpFileName + ".txt";
         using (FileStream destinationStream = File.Create(newFilePath)) {
             // Set the dirty byte
             destinationStream.Write(new byte[1], 0, 1);
@@ -67,8 +68,7 @@ public class HuffmanCompression {
             using (FileStream sourceStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
                 int byteRead;
                 while ((byteRead = sourceStream.ReadByte()) != -1) {
-                    char charValue = (char)byteRead;
-                    BitArray newValue = tree.GetBitsFromChar(charValue);
+                    BitArray newValue = tree.GetBitsFromChar((char)byteRead);
                     for (int i = 0; i < newValue.Length; i++) {
                         bitBuffer[bitIndex++] = newValue[i];
                         if (bitIndex >= BIT_BUFFER_LENGTH) {

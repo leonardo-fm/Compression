@@ -1,17 +1,17 @@
 ﻿using Algorithm;
 
 class Program {
-    private static string file = "ScreenToGif.exe";
+    private static string file = "Test6_0";
+    private static string directory = @"C:\Users\Lo\Desktop\Cmp\multi_lvl\";
     
     static void Main(string[] args) {
+        
         HuffmanCompression cmp = new HuffmanCompression();
         Console.WriteLine("Started compressing");
-        cmp.Compress(@"C:\Users\Lo\Desktop\Cmp\" + file);
+        for (int i = 0; i < 10; i++) {
+            cmp.Compress(directory + $"Test6_{i}.txt", $"Test6_{i + 1}");
+            Console.WriteLine();
+        }
         Console.WriteLine("Finished compressing");
-        
-        HuffmanDecompression dcmp = new HuffmanDecompression();
-        Console.WriteLine("Started decompressing");
-        dcmp.Decompression(@"C:\Users\Lo\Desktop\Cmp\" + file + ".mlh");
-        Console.WriteLine("Finished decompressing");
     }
 }

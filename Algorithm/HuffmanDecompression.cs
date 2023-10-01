@@ -9,10 +9,10 @@ public class HuffmanDecompression {
     private byte[] rBuffer = new byte[BUFFER_LENGTH_READ];
     private byte[] wBufferOnFile = new byte[BUFFER_LENGTH_WRITE_ON_FILE];
 
-    public void Decompression(string filePath) {
+    public void Decompression(string filePath, string decFileName) {
         List<Node> charList = ExtractListFromFile(filePath);
         HTree tree = Utilities.GenerateTree(charList);
-        GenerateUncompressedFile(filePath, tree);
+        GenerateUncompressedFile(filePath, tree, decFileName);
     }
     
     private static List<Node> ExtractListFromFile(string filePath) {
@@ -45,8 +45,8 @@ public class HuffmanDecompression {
         return result.OrderBy(x => x.value).OrderBy(x => x.compareValue).ToList();
     }
     
-    private void GenerateUncompressedFile(string filePath, HTree tree) {
-        string newFilePath = filePath.Substring(0, filePath.LastIndexOf('.')) + "_dec.txt";
+    private void GenerateUncompressedFile(string filePath, HTree tree, string decFileName) {
+        string newFilePath = filePath.Substring(0, filePath.LastIndexOf('\\')) + "\\" + decFileName + ".txt";
         using (FileStream compressedFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
             // Read the dirty byte
             int nOfDirtyBits = compressedFileStream.ReadByte();
